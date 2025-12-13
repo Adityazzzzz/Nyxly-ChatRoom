@@ -34,7 +34,6 @@ const Page = () => {
       return res.data
     },
   })
-  
 
   useEffect(() => {
     if (ttlData?.ttl !== undefined) setTimeRemaining(ttlData.ttl)
@@ -61,24 +60,6 @@ const Page = () => {
     return () => clearInterval(interval)
   }, [timeRemaining, router])
 
-  useEffect(() => {
-    const handleLeave = () => {
-      // We use sendBeacon because it works reliably even if the tab is closing immediately
-      const blob = new Blob([JSON.stringify({ roomId })], {
-        type: "application/json",
-      })
-      navigator.sendBeacon("/api/room/leave", blob)
-    }
-
-    // Trigger when window/tab is closed
-    window.addEventListener("beforeunload", handleLeave)
-
-    // Trigger when component unmounts (e.g. user navigates to Home)
-    return () => {
-      window.removeEventListener("beforeunload", handleLeave)
-      handleLeave()
-    }
-  }, [roomId])
 
   const { data: messages, refetch } = useQuery({
     queryKey: ["messages", roomId],
