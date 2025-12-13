@@ -32,7 +32,7 @@ export const proxy = async (req: NextRequest) => {
   const count = await redis.scard(roomKey)
 
   // Room full → rollback and reject
-  if (count > 2) {
+  if (count > 3) {
     await redis.srem(roomKey, token)
     return NextResponse.redirect(new URL("/?error=room-full", req.url))
   }
