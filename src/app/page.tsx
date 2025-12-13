@@ -64,8 +64,12 @@ function Lobby() {
 
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold tracking-tight text-green-500">
-            {">"}private_chat
+            Nyxly
+            <h3 className="text-2xl font-bold tracking-tight text-green-500">
+              {">"}private_chat
+            </h3>
           </h1>
+          
           <p className="text-zinc-500 text-sm">A private, self-destructing chat room.</p>
         </div>
 
