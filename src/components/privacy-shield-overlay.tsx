@@ -18,9 +18,9 @@ export const PrivacyShieldOverlay: React.FC<PrivacyShieldOverlayProps> = ({
   return (
     <div
       onClick={onDismiss}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-3xl text-center p-6 select-none transition-all duration-200"
+      className="fixed inset-0 z-[999] flex flex-col items-center justify-center bg-black/98 backdrop-blur-3xl text-center p-6 select-none transition-all duration-150"
     >
-      <div className="max-w-md w-full border border-green-500/30 bg-zinc-950/90 p-8 shadow-2xl shadow-green-500/10 space-y-6">
+      <div className="max-w-md w-full border border-green-500/40 bg-zinc-950/95 p-8 shadow-2xl shadow-green-500/20 space-y-6 rounded-lg">
         <div className="w-16 h-16 mx-auto rounded-full bg-green-500/10 border border-green-500/40 flex items-center justify-center">
           <svg
             className="w-8 h-8 text-green-500 animate-pulse"
@@ -39,16 +39,16 @@ export const PrivacyShieldOverlay: React.FC<PrivacyShieldOverlayProps> = ({
 
         <div className="space-y-2">
           <h2 className="text-lg font-bold tracking-wider text-green-400 font-mono">
-            PRIVACY SHIELD ACTIVE
+            PRIVACY SHIELD ENGAGED
           </h2>
-          <p className="text-xs text-zinc-400 font-mono leading-relaxed">
+          <p className="text-xs text-zinc-300 font-mono leading-relaxed">
             {reason || "Content obscured to prevent background capture, recording, or window snooping."}
           </p>
         </div>
 
-        <div className="pt-2 border-t border-zinc-800">
+        <div className="pt-3 border-t border-zinc-800">
           <p className="text-[11px] text-zinc-500 font-mono">
-            Click anywhere or re-focus this window to restore view
+            Click anywhere or focus this window to resume
           </p>
         </div>
       </div>
@@ -64,8 +64,8 @@ export const CaptureAlertToast: React.FC<CaptureAlertToastProps> = ({ alert }) =
   if (!alert) return null
 
   return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-bounce">
-      <div className="bg-red-950/90 border border-red-500 text-red-200 px-5 py-2.5 shadow-2xl text-xs font-mono font-bold flex items-center gap-3 backdrop-blur-md">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[1000] animate-bounce">
+      <div className="bg-red-950/95 border border-red-500 text-red-200 px-5 py-2.5 shadow-2xl text-xs font-mono font-bold flex items-center gap-3 backdrop-blur-md rounded">
         <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
         <span>{alert}</span>
       </div>

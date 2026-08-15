@@ -3,12 +3,12 @@
 import { useEffect, useState, useCallback } from "react"
 
 interface PrivacyShieldOptions {
-  strictMode?: boolean // If true, also shields when mouse leaves the window
-  clipboardWipe?: boolean // Overwrite clipboard upon PrintScreen capture attempt
+  strictMode?: boolean
+  clipboardWipe?: boolean
 }
 
 export const usePrivacyShield = (options: PrivacyShieldOptions = {}) => {
-  const { strictMode = false, clipboardWipe = true } = options
+  const { strictMode = true, clipboardWipe = true } = options
 
   const [isShielded, setIsShielded] = useState(false)
   const [shieldReason, setShieldReason] = useState<string | null>(null)
@@ -30,20 +30,19 @@ export const usePrivacyShield = (options: PrivacyShieldOptions = {}) => {
     try {
       await navigator.clipboard.writeText("")
     } catch {
-      // Clipboard access might require active focus or permission
+      // Ignore clipboard permission errors
     }
   }, [clipboardWipe])
 
   useEffect(() => {
     if (typeof window === "undefined") return
 
-    // 1. Focus loss & Tab visibility (Snipping tool, Alt-Tab, task switch)
+    // 1. Focus loss & Tab visibility (Snipping Tool, Alt-Tab, Windows Search)
     const handleBlur = () => {
       triggerShield("Window unfocused • Content protected from background capture")
     }
 
     const handleFocus = () => {
-      // Restore view when user focuses back
       unshield()
     }
 
@@ -55,9 +54,22 @@ export const usePrivacyShield = (options: PrivacyShieldOptions = {}) => {
       }
     }
 
-    // 2. Keyboard shortcuts interception
+    // 2. Proactive capture key detection (Win+Shift+S, PrintScreen, Ctrl+P, Meta Key)
     const handleKeyDown = (e: KeyboardEvent) => {
-      // PrintScreen detection (Windows PrintScreen / Win+Shift+S trigger)
+      // Windows Key (Meta) or Snipping Tool (Win+Shift+S / Shift+S with Meta)
+      if (e.key === "Meta" || e.code === "MetaLeft" || e.code === "MetaRight") {
+        triggerShield("OS shortcut key detected • Screen shielded")
+        return
+      }
+
+      if (e.shiftKey && (e.key === "S" || e.key === "s" || e.code === "KeyS") && (e.metaKey || e.ctrlKey)) {
+        triggerShield("Screen capture shortcut detected • Shield engaged")
+        setCaptureAlert("⚠️ Snipping Tool / Screenshot shortcut detected and blocked.")
+        wipeClipboard()
+        return
+      }
+
+      // PrintScreen detection
       if (e.key === "PrintScreen" || e.code === "PrintScreen") {
         triggerShield("Screen capture detected • Shield engaged")
         setCaptureAlert("⚠️ Screenshot attempt blocked & clipboard sanitized.")
@@ -66,7 +78,7 @@ export const usePrivacyShield = (options: PrivacyShieldOptions = {}) => {
         setTimeout(() => {
           setCaptureAlert(null)
           unshield()
-        }, 2000)
+        }, 2500)
         return
       }
 
@@ -79,7 +91,7 @@ export const usePrivacyShield = (options: PrivacyShieldOptions = {}) => {
         return
       }
 
-      // Block Ctrl+S / Cmd+S (Save webpage to disk)
+      // Block Ctrl+S / Cmd+S (Save webpage)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault()
         e.stopPropagation()
@@ -88,7 +100,7 @@ export const usePrivacyShield = (options: PrivacyShieldOptions = {}) => {
         return
       }
 
-      // Block F12 and inspect shortcuts
+      // Block Developer Tools shortcuts
       if (
         e.key === "F12" ||
         ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key.toLowerCase() === "i" || e.key.toLowerCase() === "j" || e.key.toLowerCase() === "c"))
@@ -111,13 +123,14 @@ export const usePrivacyShield = (options: PrivacyShieldOptions = {}) => {
     }
 
     const handleMouseEnter = () => {
-      if (isStrict) {
+      if (isStrict && !document.hidden) {
         unshield()
       }
     }
 
     window.addEventListener("blur", handleBlur)
     window.addEventListener("focus", handleFocus)
+    window.addEventListener("focusout", handleBlur)
     document.addEventListener("visibilitychange", handleVisibilityChange)
     window.addEventListener("keydown", handleKeyDown, true)
     window.addEventListener("keyup", handleKeyUp, true)
@@ -127,6 +140,7 @@ export const usePrivacyShield = (options: PrivacyShieldOptions = {}) => {
     return () => {
       window.removeEventListener("blur", handleBlur)
       window.removeEventListener("focus", handleFocus)
+      window.removeEventListener("focusout", handleBlur)
       document.removeEventListener("visibilitychange", handleVisibilityChange)
       window.removeEventListener("keydown", handleKeyDown, true)
       window.removeEventListener("keyup", handleKeyUp, true)

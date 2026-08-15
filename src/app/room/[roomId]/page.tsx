@@ -11,7 +11,7 @@ import { ShieldStatusBadge } from "@/components/shield-status-badge"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { useParams, useRouter } from "next/navigation"
-import { useEffect, useRef, useState, useMemo } from "react"
+import { useEffect, useRef, useState } from "react"
 
 function formatTimeRemaining(seconds: number) {
   const mins = Math.floor(seconds / 60)
@@ -40,7 +40,7 @@ const Page = () => {
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [encryptionKey, setEncryptionKey] = useState<string | null>(null)
 
-  // Initialize privacy shield hook
+  // Initialize privacy shield hook with strictMode default on
   const {
     isShielded,
     shieldReason,
@@ -48,7 +48,7 @@ const Page = () => {
     isStrict,
     setIsStrict,
     unshield,
-  } = usePrivacyShield()
+  } = usePrivacyShield({ strictMode: true })
 
   // Extract E2EE key from URL fragment #key=...
   useEffect(() => {
@@ -137,7 +137,6 @@ const Page = () => {
 
   const { mutate: sendMessage, isPending } = useMutation({
     mutationFn: async ({ text }: { text: string }) => {
-      // Encrypt message client-side before dispatching to server/Redis
       const payloadText = encryptionKey
         ? await encryptMessage(text, encryptionKey)
         : text
@@ -172,7 +171,6 @@ const Page = () => {
   })
 
   const copyLink = () => {
-    // Copy the full URL including hash #key=... so invitees join with E2EE key
     const url = window.location.href
     navigator.clipboard.writeText(url)
     setCopyStatus("COPIED!")
@@ -182,7 +180,7 @@ const Page = () => {
   return (
     <main
       onContextMenu={(e) => e.preventDefault()}
-      className={`flex flex-col h-screen max-h-screen overflow-hidden privacy-protected ${
+      className={`flex flex-col h-screen max-h-screen overflow-hidden bg-black text-zinc-100 privacy-protected ${
         isShielded ? "privacy-blur" : ""
       }`}
     >
@@ -200,53 +198,51 @@ const Page = () => {
       <CaptureAlertToast alert={captureAlert} />
 
       {/* HEADER */}
-      <header className="border-b border-zinc-800 p-4 flex items-center justify-between bg-zinc-900/40 backdrop-blur relative z-20">
-        <div className="flex items-center gap-4">
+      <header className="border-b border-zinc-800 p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 bg-zinc-950/80 backdrop-blur relative z-20">
+        <div className="flex items-center gap-3 sm:gap-4">
           <div className="flex flex-col">
-            <span className="text-xs text-zinc-500 uppercase">Room ID</span>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-mono">Room ID</span>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-green-500 truncate">
-                {roomId.slice(0, 10) + "..."}
+              <span className="font-bold text-xs sm:text-sm text-green-400 truncate font-mono">
+                {roomId.slice(0, 8) + "..."}
               </span>
               <button
                 onClick={copyLink}
-                className="text-[10px] bg-zinc-800 hover:bg-zinc-700 px-2 py-0.5 rounded text-zinc-400 hover:text-zinc-200 transition-colors font-mono cursor-pointer"
+                className="text-[10px] bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 px-2 py-0.5 rounded text-zinc-300 hover:text-white transition-colors font-mono cursor-pointer"
               >
                 {copyStatus}
               </button>
             </div>
           </div>
 
-          <div className="h-8 w-px bg-zinc-800" />
+          <div className="h-7 w-px bg-zinc-800" />
 
           <div className="flex flex-col">
-            <span className="text-xs text-zinc-500 uppercase">Self-Destruct</span>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-mono">Self-Destruct</span>
             <span
-              className={`text-sm font-bold flex items-center gap-2 ${
+              className={`text-xs sm:text-sm font-bold flex items-center font-mono ${
                 timeRemaining !== null && timeRemaining < 60
                   ? "text-red-500"
-                  : "text-amber-500"
+                  : "text-amber-400"
               }`}
             >
               {timeRemaining !== null ? formatTimeRemaining(timeRemaining) : "--:--"}
             </span>
           </div>
 
-          <div className="h-8 w-px bg-zinc-800 hidden sm:block" />
+          <div className="h-7 w-px bg-zinc-800" />
 
           {/* Privacy & E2EE Shield Status Indicator */}
-          <div className="hidden sm:block">
-            <ShieldStatusBadge
-              isStrict={isStrict}
-              onToggleStrict={setIsStrict}
-              isE2EE={!!encryptionKey}
-            />
-          </div>
+          <ShieldStatusBadge
+            isStrict={isStrict}
+            onToggleStrict={setIsStrict}
+            isE2EE={!!encryptionKey}
+          />
         </div>
 
         <button
           onClick={() => destroyRoom()}
-          className="text-xs bg-zinc-800 hover:bg-red-600 px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition-all group flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+          className="text-xs bg-red-950/40 border border-red-800/80 hover:bg-red-900/60 px-3 py-1.5 rounded text-red-300 hover:text-white font-bold transition-all group flex items-center gap-2 disabled:opacity-50 cursor-pointer font-mono ml-auto"
         >
           <span className="group-hover:animate-pulse">💣</span>
           DESTROY NOW
@@ -256,11 +252,11 @@ const Page = () => {
       {/* MESSAGES VIEWPORT */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin relative z-20 select-none">
         {decryptedMessages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full space-y-2">
-            <p className="text-zinc-600 text-sm font-mono">
+          <div className="flex flex-col items-center justify-center h-full space-y-2 select-none">
+            <p className="text-zinc-500 text-sm font-mono">
               No messages yet, start the conversation.
             </p>
-            <p className="text-[11px] text-zinc-700 font-mono">
+            <p className="text-[11px] text-zinc-600 font-mono">
               🔒 Zero-knowledge E2EE and Anti-capture shield are active.
             </p>
           </div>
@@ -268,22 +264,22 @@ const Page = () => {
 
         {decryptedMessages.map((msg) => (
           <div key={msg.id} className="flex flex-col items-start select-none">
-            <div className="max-w-[80%] group">
+            <div className="max-w-[85%] group bg-zinc-950/60 border border-zinc-900 px-3.5 py-2 rounded">
               <div className="flex items-baseline gap-3 mb-1">
                 <span
                   className={`text-xs font-bold font-mono ${
-                    msg.sender === username ? "text-green-500" : "text-blue-500"
+                    msg.sender === username ? "text-green-400" : "text-blue-400"
                   }`}
                 >
                   {msg.sender === username ? "YOU" : msg.sender}
                 </span>
 
-                <span className="text-[10px] text-zinc-600 font-mono">
+                <span className="text-[10px] text-zinc-500 font-mono">
                   {format(msg.timestamp, "HH:mm")}
                 </span>
               </div>
 
-              <p className="text-sm text-zinc-300 leading-relaxed break-words font-sans selection:bg-transparent">
+              <p className="text-sm text-zinc-200 leading-relaxed break-words font-sans selection:bg-transparent">
                 {msg.text}
               </p>
             </div>
@@ -291,17 +287,19 @@ const Page = () => {
         ))}
       </div>
 
-      {/* INPUT AREA WITH AI SCRAPER LOCKS */}
-      <div className="p-4 border-t border-zinc-800 bg-zinc-900/40 backdrop-blur relative z-20">
-        <div className="flex gap-4">
+      {/* INPUT AREA WITH AI SCRAPER & EXTENSION SHIELDS */}
+      <div className="p-3 sm:p-4 border-t border-zinc-800 bg-zinc-950/80 backdrop-blur relative z-20">
+        <div className="flex gap-3">
           <div className="flex-1 relative group">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500 animate-pulse font-mono">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-500 font-mono text-sm pointer-events-none z-10">
               {">"}
             </span>
             <input
               ref={inputRef}
               autoFocus
               type="text"
+              name="chat_message_e2ee"
+              id="chat_message_input"
               value={input}
               autoComplete="off"
               autoCorrect="off"
@@ -310,6 +308,8 @@ const Page = () => {
               data-gramm="false"
               data-gramm_editor="false"
               data-enable-grammarly="false"
+              data-1p-ignore="true"
+              data-lpignore="true"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && input.trim() && !isPending) {
                   sendMessage({ text: input })
@@ -318,7 +318,7 @@ const Page = () => {
               }}
               placeholder="Type encrypted message..."
               onChange={(e) => setInput(e.target.value)}
-              className="w-full bg-black border border-zinc-800 focus:border-zinc-700 focus:outline-none transition-colors text-zinc-100 placeholder:text-zinc-700 py-3 pl-8 pr-4 text-sm font-mono"
+              className="w-full bg-zinc-950 border border-zinc-800 focus:border-green-500/50 focus:outline-none transition-colors text-zinc-100 placeholder:text-zinc-600 py-2.5 pl-8 pr-4 text-sm font-mono rounded"
             />
           </div>
 
@@ -330,7 +330,7 @@ const Page = () => {
               }
             }}
             disabled={!input.trim() || isPending}
-            className="bg-zinc-800 text-zinc-400 px-6 text-sm font-bold hover:text-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-mono"
+            className="bg-zinc-100 hover:bg-zinc-200 text-black px-5 sm:px-6 text-xs sm:text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-mono rounded uppercase"
           >
             SEND
           </button>
