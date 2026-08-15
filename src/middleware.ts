@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { redis } from "./lib/redis"
 import { nanoid } from "nanoid"
 
-export const proxy = async (req: NextRequest) => {
+export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
 
   const roomMatch = pathname.match(/^\/room\/([^/]+)$/)
@@ -21,12 +21,12 @@ export const proxy = async (req: NextRequest) => {
   const existingToken = req.cookies.get("x-auth-token")?.value
 
   // USER IS ALLOWED TO JOIN ROOM
-  if (existingToken && meta.connected.includes(existingToken)) {
+  if (existingToken && meta.connected?.includes(existingToken)) {
     return NextResponse.next()
   }
 
   // USER IS NOT ALLOWED TO JOIN
-  if (meta.connected.length >= 3) {
+  if (meta.connected && meta.connected.length >= 3) {
     return NextResponse.redirect(new URL("/?error=room-full", req.url))
   }
 
@@ -42,7 +42,7 @@ export const proxy = async (req: NextRequest) => {
   })
 
   await redis.hset(`meta:${roomId}`, {
-    connected: [...meta.connected, token],
+    connected: [...(meta.connected || []), token],
   })
 
   return response
