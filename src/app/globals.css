@@ -24,3 +24,30 @@ body {
   color: var(--foreground);
   font-family: var(--font-jetbrains-mono);
 }
+
+/* Privacy & Anti-Capture Protection Styles */
+.privacy-protected {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.privacy-blur {
+  filter: blur(28px) brightness(0.2);
+  pointer-events: none;
+  transition: filter 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Print Screen & PDF Export Blackout */
+@media print {
+  html, body {
+    display: none !important;
+    visibility: hidden !important;
+    background: #000000 !important;
+    color: #ffffff !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+}
